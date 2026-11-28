@@ -1570,6 +1570,15 @@
         }
       },
       {
+        "method": "POST",
+        "path": "/api/domains/<domain>/purge-cache",
+        "description": "Purge the server-side caches for the domain: its Varnish objects, its scripts in OPcache and the object cache of WordPress sites on it. Returns {\"domain\":..., \"purged\":true, \"layers\":[{\"name\":\"varnish\",\"state\":\"purged\"}]}, each layer is purged, skipped or failed.",
+        "body_schema": {
+          "type": "object",
+          "properties": {}
+        }
+      },
+      {
         "method": "GET",
         "path": "/api/domains/<domain>/dns/export",
         "description": "Export the domain's zone file."

@@ -43,7 +43,7 @@ var bulkIcons = map[string]string{
 	"redirect": "bi-signpost-split", "unredirect": "bi-signpost", "ttl": "bi-clock", "schedule": "bi-calendar-event",
 	"overlap_on": "bi-layers", "overlap_off": "bi-layers-half", "waf": "bi-shield-check", "set_level": "bi-sliders",
 	"apply_profile": "bi-ui-checks", "cloudflare": "bi-cloud", "safe": "bi-check2-circle", "repair": "bi-wrench",
-	"optimize": "bi-speedometer2", "version": "bi-tag", "php": "bi-filetype-php", "path": "bi-folder", "container": "bi-box",
+	"optimize": "bi-speedometer2", "purge": "bi-eraser", "version": "bi-tag", "php": "bi-filetype-php", "path": "bi-folder", "container": "bi-box",
 	"detach": "bi-plug", "cpu": "bi-cpu", "ram": "bi-memory", "pids": "bi-list-ol", "quota": "bi-hdd", "add_target": "bi-plus-circle",
 }
 
@@ -57,7 +57,7 @@ var plannerBulkIcons = map[string]string{
 	"redirect": "ri-signpost-line", "unredirect": "ri-signpost-line", "ttl": "ri-time-line", "schedule": "ri-calendar-event-line",
 	"overlap_on": "ri-stack-line", "overlap_off": "ri-stack-line", "waf": "ri-shield-check-line", "set_level": "ri-equalizer-line",
 	"apply_profile": "ri-list-check-3", "cloudflare": "ri-cloud-line", "safe": "ri-checkbox-circle-line", "repair": "ri-tools-line",
-	"optimize": "ri-dashboard-3-line", "version": "ri-price-tag-3-line", "php": "ri-code-s-slash-line", "path": "ri-folder-line", "container": "ri-box-3-line",
+	"optimize": "ri-dashboard-3-line", "purge": "ri-eraser-line", "version": "ri-price-tag-3-line", "php": "ri-code-s-slash-line", "path": "ri-folder-line", "container": "ri-box-3-line",
 	"detach": "ri-plug-line", "cpu": "ri-cpu-line", "ram": "ri-ram-2-line", "pids": "ri-list-ordered", "quota": "ri-hard-drive-3-line", "add_target": "ri-add-circle-line",
 }
 

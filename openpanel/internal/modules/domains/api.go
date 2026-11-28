@@ -31,6 +31,7 @@ func RegisterAPI(mux *http.ServeMux, a *appctx.App) {
 	apiregistry.Add("POST /api/domains/{domain}/ssl")
 	apiregistry.Add("POST /api/domains/{domain}/dns/records")
 	apiregistry.Add("POST /api/domains/{domain}/dns/restart")
+	apiregistry.Add("POST /api/domains/{domain}/purge-cache")
 	mux.Handle("POST /api/domains/{rest...}", auth.RequireAPI(a, "domains")(web.BlockAdminSuspended(a)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { apiDomainsPostDispatch(a, w, r) }))))
 
 	apiregistry.Add("GET /api/domains/{domain}/status")
@@ -151,6 +152,9 @@ func apiDomainsPostDispatch(a *appctx.App, w http.ResponseWriter, r *http.Reques
 	case strings.HasSuffix(rest, "/dns/records"):
 		r.SetPathValue("domain", strings.TrimSuffix(rest, "/dns/records"))
 		apiDomainsAddDNSRecord(a, w, r)
+	case strings.HasSuffix(rest, "/purge-cache"):
+		r.SetPathValue("domain", strings.TrimSuffix(rest, "/purge-cache"))
+		apiDomainsPurgeCache(a, w, r)
 	case strings.HasSuffix(rest, "/dns/restart"):
 		r.SetPathValue("domain", strings.TrimSuffix(rest, "/dns/restart"))
 		apiDomainsRestartDNS(a, w, r)

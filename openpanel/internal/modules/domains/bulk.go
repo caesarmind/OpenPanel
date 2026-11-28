@@ -26,6 +26,7 @@ func domainsBulkActions(t i18n.Translator, phpVersions []string) []web.BulkActio
 			Input: &web.BulkInput{Type: "select", Options: []web.BulkOption{{Value: "On", Label: t.Get("On")}, {Value: "Off", Label: t.Get("Off")}}}},
 		{Key: "cloudflare", Label: t.Get("Cloudflare"), Confirm: t.Get("Cloudflare-only access for the selected domains, restricted domains not proxied through Cloudflare return 403 to visitors:"),
 			Input: &web.BulkInput{Type: "select", Options: []web.BulkOption{{Value: "enable", Label: t.Get("Restrict to Cloudflare")}, {Value: "disable", Label: t.Get("Unrestrict")}}}},
+		{Key: "purge", Label: t.Get("Purge cache"), Confirm: t.Get("Purge the server cache for the selected domains?")},
 		{Key: "delete", Label: t.Get("Delete"), Confirm: t.Get("Permanently delete the selected domains, including their websites, files and DNS zones? This cannot be undone."), Danger: true},
 	}
 }
@@ -67,6 +68,11 @@ func handleDomainsBulk(a *appctx.App, mux http.Handler, w http.ResponseWriter, r
 			}
 			form.Set("cloudflare_action", value)
 			return web.Call(web.BulkCall{Method: http.MethodPost, Path: "/domains/cloudflare", Form: form})
+		case "purge":
+			if strings.HasSuffix(domain, ".onion") {
+				return web.Skip("Not available for .onion domains.")
+			}
+			return web.Call(web.BulkCall{Method: http.MethodPost, Path: "/domains/purge-cache", Form: form})
 		case "php":
 			if switcher == nil {
 				switcher = php.NewVersionSwitcher(a, r, userContext)

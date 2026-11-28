@@ -145,9 +145,9 @@
                 {{$root := .}}
                 {{range $i, $domain := .Domains}}
                 <tr x-show="(searchQuery === '' || '{{$domain.DomainURL}}'.toLowerCase().includes(searchQuery.toLowerCase())) && matchesFilters({{toJSON $domain.Filter}})" class="user-row hover:bg-gray-50 dark:hover:bg-gray-900/60 [&>td]:border-b [&>td]:border-gray-200 dark:[&>td]:border-gray-800">
-{{$skip := ""}}{{if hasSuffix $domain.DomainURL ".onion"}}{{$skip = "suspend,unsuspend"}}{{else if eq $domain.SuspendedBy "admin"}}{{$skip = "suspend,unsuspend,php,redirect,unredirect,waf,cloudflare,delete"}}{{else if eq $domain.Status "Suspended"}}{{$skip = "suspend"}}{{else if eq $domain.Status "Not Suspended"}}{{$skip = "unsuspend"}}{{end}}
+{{$skip := ""}}{{if hasSuffix $domain.DomainURL ".onion"}}{{$skip = "suspend,unsuspend"}}{{else if eq $domain.SuspendedBy "admin"}}{{$skip = "suspend,unsuspend,php,redirect,unredirect,waf,cloudflare,purge,delete"}}{{else if eq $domain.Status "Suspended"}}{{$skip = "suspend"}}{{else if eq $domain.Status "Not Suspended"}}{{$skip = "unsuspend"}}{{end}}
 {{if not $domain.RedirectURL}}{{$skip = printf "%s,unredirect" $skip}}{{end}}
-{{if hasSuffix $domain.DomainURL ".onion"}}{{$skip = printf "%s,cloudflare" $skip}}{{end}}
+{{if hasSuffix $domain.DomainURL ".onion"}}{{$skip = printf "%s,cloudflare,purge" $skip}}{{end}}
 {{template "bulk_row_checkbox" (dict "T" $root.T "Key" $domain.DomainURL "Label" $domain.DomainURL "Skip" $skip)}}
 
                     <td x-show="columns.domain" class="px-4 py-2.5 whitespace-nowrap font-medium text-gray-900 select-text dark:text-gray-50" data-sort-col="domain" data-sort-value="{{$domain.DomainURL}}">
@@ -295,6 +295,13 @@
                     <input type="hidden" name="domain_name" value="{{$domain.DomainURL}}">
                     <input type="hidden" name="cloudflare_action" value="{{if $domain.Cloudflare}}disable{{else}}enable{{end}}">
                     <button role="menuitem" type="submit" class="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-gray-900 hover:bg-gray-100 dark:text-gray-50 dark:hover:bg-gray-900"><i class="ri-cloud-line text-base leading-none text-gray-500" aria-hidden="true"></i>{{if $domain.Cloudflare}}{{$root.T.Get "Remove Cloudflare restriction"}}{{else}}{{$root.T.Get "Restrict to Cloudflare"}}{{end}}</button>
+                </form>
+            </li>
+            <li>
+                <form method="post" action="/domains/purge-cache">
+                    <input type="hidden" name="csrf_token" value="{{$root.CSRFToken}}"/>
+                    <input type="hidden" name="domain_name" value="{{$domain.DomainURL}}">
+                    <button role="menuitem" type="submit" class="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-gray-900 hover:bg-gray-100 dark:text-gray-50 dark:hover:bg-gray-900"><i class="ri-eraser-line text-base leading-none text-gray-500" aria-hidden="true"></i>{{$root.T.Get "Purge cache"}}</button>
                 </form>
             </li>
             {{if $root.UserAllowed.docroot}}

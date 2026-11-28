@@ -20,6 +20,7 @@ func Register(mux *http.ServeMux, a *appctx.App) {
 	mux.Handle("/domains/new", requireLogin("domains", func(w http.ResponseWriter, r *http.Request) { handleDomainsNew(a, w, r) }))
 	mux.Handle("/domains/delete", requireLogin("domains", func(w http.ResponseWriter, r *http.Request) { handleDeleteDomain(a, w, r) }))
 	mux.Handle("POST /domains/cloudflare", requireLogin("domains", func(w http.ResponseWriter, r *http.Request) { handleDomainCloudflare(a, w, r) }))
+	mux.Handle("POST /domains/purge-cache", requireLogin("domains", func(w http.ResponseWriter, r *http.Request) { handleDomainPurgeCache(a, w, r) }))
 	mux.Handle("POST /domains/bulk", requireLogin("domains", func(w http.ResponseWriter, r *http.Request) { handleDomainsBulk(a, mux, w, r) }))
 
 	mux.Handle("/domains/suspend", requireLogin("domain_suspend", func(w http.ResponseWriter, r *http.Request) { handleSuspendDomain(a, w, r) }))

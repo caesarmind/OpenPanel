@@ -51,7 +51,6 @@ type wpCacheSite struct {
 var (
 	wpCacheDomainRE    = regexp.MustCompile(`^[a-z0-9.-]+$`)
 	wpCacheContainerRE = regexp.MustCompile(`^[a-z0-9._-]+$`)
-	redisPrefixRE      = regexp.MustCompile(`[^a-z0-9]+`)
 	vclTTLLineRE       = regexp.MustCompile(`bereq\.http\.host == "([a-z0-9.-]+)".*set beresp\.ttl = (\d+)s;`)
 )
 
@@ -60,7 +59,7 @@ const (
 	vclTTLEnd         = "    # openpanel-site-ttl-end"
 	vclDefaultTTL     = 3600
 	userIniMarker     = "; openpanel: opcache disabled for this site"
-	redisDropinMarker = "Redis Object Cache Drop-In"
+	redisDropinMarker = cache.RedisDropinMarker
 )
 
 var wpCacheTTLChoices = map[int]bool{60: true, 300: true, 900: true, 1800: true, 3600: true, 21600: true, 86400: true}
@@ -163,7 +162,7 @@ func (s *wpCacheSite) wp(ctx context.Context, args ...string) (string, error) {
 
 // redisPrefix keeps each site's keys apart inside the account's shared redis
 func (s *wpCacheSite) redisPrefix() string {
-	return "op_" + redisPrefixRE.ReplaceAllString(strings.ToLower(s.Site), "_") + ":"
+	return cache.WPRedisPrefix(s.Site)
 }
 
 // ---------------------- VARNISH TTL (VCL) ---------------------- //
@@ -281,17 +280,7 @@ func reloadVarnishVCL(ctx context.Context, userContext string) error {
 
 // banVarnishSite drops the site's cached pages, using the x-host/x-url headers the template stores on every object
 func banVarnishSite(ctx context.Context, s *wpCacheSite) error {
-	for _, host := range []string{s.Domain, "www." + s.Domain} {
-		expr := []string{"obj.http.x-host", "==", host}
-		if s.Folder != "" {
-			expr = append(expr, "&&", "obj.http.x-url", "~", "^/"+regexp.QuoteMeta(s.Folder)+"(/|$)")
-		}
-		args := append([]string{"exec", "varnish", "varnishadm", "ban"}, expr...)
-		if out, err := podmanOutput(ctx, s.UserContext, 15*time.Second, args...); err != nil {
-			return fmt.Errorf("%v: %s", err, strings.TrimSpace(out))
-		}
-	}
-	return nil
+	return cache.BanVarnish(ctx, s.UserContext, s.Domain, s.Folder)
 }
 
 // ---------------------- STATUS ---------------------- //
@@ -788,11 +777,7 @@ func setRedisForSite(ctx context.Context, s *wpCacheSite, on bool) (string, erro
 }
 
 func flushRedisForSite(ctx context.Context, s *wpCacheSite) {
-	if !docker.IsServiceRunning(ctx, s.UserContext, "redis") {
-		return
-	}
-	_, _ = podmanOutput(ctx, s.UserContext, 30*time.Second, "exec", "redis", "sh", "-c",
-		`redis-cli --scan --pattern "$1*" | xargs -r -n 500 redis-cli del >/dev/null`, "sh", s.redisPrefix())
+	cache.FlushRedisPrefix(ctx, s.UserContext, s.redisPrefix())
 }
 
 // setUserIniOpcache adds/removes our opcache.enable=0 lines in the site's .user.ini, keeping whatever else the user has there
@@ -865,8 +850,7 @@ func reloadPHPFPM(ctx context.Context, s *wpCacheSite) {
 
 // reloadPHPFPMIn sends the fpm master in container a graceful reload
 func reloadPHPFPMIn(ctx context.Context, userContext, container string) {
-	_, _ = podmanOutput(ctx, userContext, 15*time.Second, "exec", container, "sh", "-c",
-		`for p in /proc/[0-9]*; do grep -q "php-fpm: master" "$p/cmdline" 2>/dev/null && kill -USR2 "${p#/proc/}"; done; true`)
+	cache.ReloadPHPFPM(ctx, userContext, container)
 }
 
 // noCachePHP renders the home page in a throwaway php process with opcache off and the redis drop-in disabled, so nothing touches the fpm pool visitors use
@@ -1019,10 +1003,9 @@ func handleWPCacheAction(a *appctx.App, w http.ResponseWriter, r *http.Request) 
 		if docker.IsServiceRunning(ctx, s.UserContext, "varnish") {
 			_ = banVarnishSite(ctx, s)
 		}
-		flushRedisForSite(ctx, s)
-		// another object cache plugin (memcached etc.) only knows how to flush itself
-		if dropin, readErr := tenantfs.ReadFile(filepath.Join(s.HostPath, "wp-content", "object-cache.php")); readErr == nil && !strings.Contains(string(dropin), redisDropinMarker) {
-			_, _ = s.wp(ctx, "cache", "flush", "--skip-themes")
+		cache.FlushWPObjectCache(ctx, s.UserContext, s.PHPContainer, s.Site, s.Docroot)
+		if !s.Litespeed {
+			cache.PurgeOpcache(ctx, s.UserContext, s.PHPContainer, s.Docroot)
 		}
 		msg = "All caches purged for " + s.Site + "."
 		_ = logger.RecordUserAction(a.Config, s.Username, "purged caches for WordPress site "+s.Site, ip)

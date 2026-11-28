@@ -1,3 +1,4 @@
+| **Purge cache** | Clears the server-side caches of the selected domains, see [Purge cache](#purge-cache). |
 ---
 sidebar_position: 1
 ---
@@ -63,6 +64,7 @@ Depending on the features enabled on your server, the following actions are avai
 * **Edit DNS zone**: if the DNS feature is enabled
 * **Manage WAF**: if the WAF feature is enabled
 * **Restrict to Cloudflare / Remove Cloudflare restriction**: see [Cloudflare-only access](#cloudflare-only-access)
+* **Purge cache**: see [Purge cache](#purge-cache)
 * **Change docroot**: if the docroot feature is enabled
 * **Edit VirtualHosts**: if the VHosts editor is enabled
 * **Capitalize**: if the Capitalize feature is enabled
@@ -90,6 +92,26 @@ Only restrict domains that are proxied through Cloudflare. If the domain points 
 :::
 
 To change several domains at once, use the **Cloudflare** [bulk action](#bulk-actions). Cloudflare-only access is not available for `.onion` domains.
+
+## Purge cache
+
+Click **Purge cache** in a domain's **Actions** menu after you update a site and still see the old version. It clears the caches OpenPanel runs on the server for that domain:
+
+| Cache | What is cleared | When |
+|---|---|---|
+| **Varnish** | Every cached page and file of the domain. | Varnish is running and turned on for the domain. |
+| **OPcache** | The compiled PHP scripts under the domain's document root. Other domains keep theirs. | The domain runs on PHP-FPM. |
+| **WordPress object cache** | The Redis keys of each WordPress site on the domain, or the cache of another object cache plugin. | The domain has a WordPress site. |
+
+The notice at the top of the page lists what was purged. If the PHP container can't list its cached scripts, OPcache is reset for every site on that PHP version instead, and the notice says so.
+
+To purge every domain, select them all and use the **Purge cache** [bulk action](#bulk-actions).
+
+:::info
+Purge cache can't reach a visitor's browser or a CDN such as Cloudflare. If a CSS, JS or image file still looks old after a purge, hard reload the page (Ctrl+F5), or change the file's URL with a version, for example `style.css?v=2`.
+:::
+
+Redis and Memcached data of other applications is left alone, because all sites of an account share one instance. Purge cache is not available for `.onion` domains.
 
 ## Bulk Actions
 
