@@ -64,3 +64,18 @@ func TestRewriteComposePortBlock(t *testing.T) {
 		t.Errorf("expected mysql's HTTP_PORT left untouched (outside nginx's block), got:\n%s", got)
 	}
 }
+
+func TestProxyHTTPPortLineOn(t *testing.T) {
+	for content, want := range map[string]bool{
+		"FOO=bar\nPROXY_HTTP_PORT=\"127.0.0.1:32787:80\"\n": true,
+		"  PROXY_HTTP_PORT=8080\n":                          true,
+		"FOO=bar\n#PROXY_HTTP_PORT=8080\n":                  false,
+		"# PROXY_HTTP_PORT=8080\n":                          false,
+		"HTTP_PORT=8080\n":                                  false,
+		"":                                                  false,
+	} {
+		if got := ProxyHTTPPortLineOn(content); got != want {
+			t.Errorf("%q: got %v, want %v", content, got, want)
+		}
+	}
+}

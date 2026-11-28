@@ -222,7 +222,8 @@ func handleVarnish(a *appctx.App, w http.ResponseWriter, r *http.Request) {
 			}
 
 		case "disable":
-			if docker.IsServiceRunning(ctx, userContext, service) {
+			// not IsServiceRunning: a varnish that keeps crashing still holds the HTTP port and has to be removable
+			if varnishEnabled(ctx, userContext) {
 				_ = docker.ToggleProxyHTTPPort(userContext, "off")
 				_ = docker.SwapAllWebserversComposePort(userContext, "off")
 				// not docker.ComposeContainer(..., "stop") - see ForceRemoveContainer's doc comment for why "podman-compose down" isn't safe here (it cascades through depends_on and takes php-fpm down with it)
@@ -274,7 +275,8 @@ func handleVarnish(a *appctx.App, w http.ResponseWriter, r *http.Request) {
 
 	status := docker.GetContainerStatus(ctx, userContext, service)
 	actions := []string{"enable", "restart"}
-	if status.State == "running" {
+	enabled := status.State == "running" || varnishEnabled(ctx, userContext)
+	if enabled {
 		actions = []string{"disable", "domain"}
 	}
 
@@ -286,5 +288,5 @@ func handleVarnish(a *appctx.App, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	renderVarnishPage(a, w, r, status, varnishStatus, domains)
+	renderVarnishPage(a, w, r, status, enabled, varnishStatus, domains)
 }

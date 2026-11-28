@@ -64,7 +64,7 @@ func apiVarnishStatus(a *appctx.App, w http.ResponseWriter, r *http.Request) {
 	}
 	status := docker.GetContainerStatus(r.Context(), userContext, "varnish")
 	actions := []string{"enable", "restart"}
-	if status.State == "running" {
+	if status.State == "running" || varnishEnabled(r.Context(), userContext) {
 		actions = []string{"disable", "domain"}
 	}
 	web.WriteJSON(w, http.StatusOK, map[string]any{
@@ -135,7 +135,7 @@ func apiVarnishAction(a *appctx.App, w http.ResponseWriter, r *http.Request) {
 
 	case "disable":
 		webserver, _ := docker.GetEnvValue(userContext, "WEB_SERVER")
-		if !docker.IsServiceRunning(ctx, userContext, "varnish") {
+		if !varnishEnabled(ctx, userContext) {
 			web.WriteJSON(w, http.StatusOK, map[string]string{"message": "Varnish is not running"})
 			return
 		}

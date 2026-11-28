@@ -118,7 +118,7 @@ func renderCacheServicePage(a *appctx.App, w http.ResponseWriter, r *http.Reques
 	}
 }
 
-func renderVarnishPage(a *appctx.App, w http.ResponseWriter, r *http.Request, status docker.ContainerStatus, varnishStatus map[string]string, domains []appctx.Domain) {
+func renderVarnishPage(a *appctx.App, w http.ResponseWriter, r *http.Request, status docker.ContainerStatus, enabled bool, varnishStatus map[string]string, domains []appctx.Domain) {
 	layout, _, err := web.BuildLayoutData(a, w, r, "Varnish")
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
@@ -138,7 +138,8 @@ func renderVarnishPage(a *appctx.App, w http.ResponseWriter, r *http.Request, st
 		Description:    layout.T.Get("Varnish is a reverse caching proxy used as HTTP accelerator for content-heavy dynamic web sites as well as APIs."),
 		ContainerState: status.State, HealthStatus: status.Health,
 		StatusKey: statusKey, StatusColor: color, StatusLabel: label, StatusMapJSON: services.StatusMapJSON(layout.T),
-		IsRunning: status.State == "running", VarnishDomains: rows,
+		// enabled keeps the Disable button on the page while the container is down
+		IsRunning: enabled, VarnishDomains: rows,
 	}
 	if err := cacheServicePage.Render(w, http.StatusOK, data); err != nil {
 		log.Printf("CACHE - varnish template render error: %v", err)

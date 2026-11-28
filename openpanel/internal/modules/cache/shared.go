@@ -34,3 +34,8 @@ func restartWebserverAfterVarnishToggle(ctx context.Context, userContext, webser
 	}
 	return result
 }
+
+// varnishEnabled is true while the account is switched over to varnish, also when its container is down or crash-looping
+func varnishEnabled(ctx context.Context, userContext string) bool {
+	return docker.IsServiceRunning(ctx, userContext, "varnish") || docker.ProxyHTTPPortOn(userContext)
+}

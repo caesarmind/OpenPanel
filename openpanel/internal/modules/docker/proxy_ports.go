@@ -100,3 +100,19 @@ func RewriteComposePortBlock(content, webserver, old, replacement string) string
 	}
 	return strings.Join(lines, "")
 }
+
+// ProxyHTTPPortOn reports whether PROXY_HTTP_PORT is switched on in the user's .env, which is the case for as long as varnish is enabled
+func ProxyHTTPPortOn(userContext string) bool {
+	content, err := tenantfs.ReadFile("/home/" + userContext + "/.env")
+	return err == nil && ProxyHTTPPortLineOn(string(content))
+}
+
+// ProxyHTTPPortLineOn is ProxyHTTPPortOn's pure half
+func ProxyHTTPPortLineOn(content string) bool {
+	for _, line := range strings.Split(content, "\n") {
+		if strings.HasPrefix(strings.TrimSpace(line), "PROXY_HTTP_PORT=") {
+			return true
+		}
+	}
+	return false
+}
